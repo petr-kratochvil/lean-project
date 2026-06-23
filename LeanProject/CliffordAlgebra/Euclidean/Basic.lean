@@ -69,6 +69,14 @@ theorem Q_euclid_neg_ne_zero (v : V) (hv : v ≠ 0) : Q v ≠ 0 := by
   exact neg_ne_zero.mpr (pow_ne_zero 2 (norm_ne_zero_iff.mpr hv))
 
 /-
+Non-positivity of `Q_euclid_neg`
+-/
+theorem Q_euclid_nonpos (v : V) : Q v ≤ 0 := by
+  rw [Q_euclid_neg_identity]
+  have : 0 ≤ ‖v‖ ^ 2 := by positivity
+  linarith
+
+/-
 Polarization identity for `Q_euclid_neg`
 Similar to `‖v + w‖² - ‖v‖² - ‖w‖² = 2 * ⟪v, w⟫`, but with a minus sign
 -/

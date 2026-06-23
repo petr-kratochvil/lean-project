@@ -26,6 +26,7 @@ Statements:
 * `conjugate_ι`:
 * `conjugate.map_one`:
 * `conjugate.map_mul`:
+* `conjugate_conjugate` :
 
 -/
 def conjugate : Cl →ₗ[R] Cl := reverse.comp involute.toLinearMap
@@ -48,6 +49,10 @@ protected theorem conjugate.map_one : conjugate (1 : Cl) = 1 := by
 protected theorem conjugate.map_mul : conjugate (a * b) = conjugate b * conjugate a := by
   repeat rw [conjugate_apply]
   rw [map_mul, reverse.map_mul]
+
+theorem conjugate_conjugate (x : Cl) : conjugate (conjugate x) = x := by
+  simp only [conjugate_apply]
+  rw [reverse_involute, reverse_reverse, involute_involute]
 
 /-!
 # Note 3.2.2.
@@ -77,7 +82,7 @@ theorem s323_iii_b : conjugate (a * b) = conjugate b * conjugate a := conjugate.
 * involute preserves units (maps units to units)
 * (i) `involute (unit⁻¹)` is the inverse of `involute unit`
 * (ii) `reverse (unit⁻¹)` is the inverse of `reverse unit`
-* (ii) `reverse(unit⁻¹)` is the inverse of `reverse unit`
+* (iii) `conjugate (unit⁻¹)` is the inverse of `conjugate unit`
 
 -/
 theorem s324_i :
@@ -101,11 +106,27 @@ theorem s324_iii :
   · rw [← conjugate.map_mul, Units.inv_mul, conjugate.map_one]
   · rw [← conjugate.map_mul, Units.mul_inv, conjugate.map_one]
 
-/- involute preserves units (maps units to units) -/
+/-
+Involute preserves units (maps units to units)
+-/
 theorem isUnit_involute {a : Cl} : IsUnit (involute a) ↔ IsUnit a := by
   constructor
   · exact fun h_unit ↦ involute_involute a ▸ IsUnit.map involute.toMonoidHom h_unit
   · exact fun h_unit ↦ IsUnit.map involute.toMonoidHom h_unit
+
+/-
+Conjugate preserves units (maps units to units)
+-/
+theorem isUnit_conjugate {a : Cl} : IsUnit (conjugate a) ↔ IsUnit a := by
+  constructor
+  · intro hconj
+    rw [← conjugate_conjugate a]
+    obtain ⟨u, hu⟩ := hconj
+    rw [← hu]
+    exact ⟨⟨conjugate ↑u, conjugate ↑u⁻¹, (s324_iii u).1, (s324_iii u).2⟩, rfl⟩
+  · intro ha
+    obtain ⟨u, rfl⟩ := ha
+    exact ⟨⟨conjugate ↑u, conjugate ↑u⁻¹, (s324_iii u).1, (s324_iii u).2⟩, rfl⟩
 
 /-! # Statement 3.2.5
 * (i) `v * conjugate v = -Q(v)` (which is ‖x‖² in Euclidean case)
