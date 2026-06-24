@@ -1,4 +1,5 @@
 import LeanProject.CliffordAlgebra.Euclidean.Conjugate
+import LeanProject.CliffordAlgebra.Euclidean.CliffordGroup
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 open scoped RealInnerProductSpace
@@ -51,6 +52,24 @@ theorem isUnit_vector (hv : v ≠ 0) : IsUnit (ι v) := by
   · rw [vector_inverse_right]
     exact hv
   · rw [vector_inverse_left]
+    exact hv
+
+/-!
+# Vectors belong to the Clifford group
+Non-zero vectors are invertible, so they belong to the Clifford group
+(a special case, they are part of the Clifford group generator set)
+
+-/
+theorem vector_unit_mem_cliffordGroup (hv : v ≠ 0) :
+  let v_unit := (isUnit_vector n v hv).unit; v_unit ∈ CliffordGroup := by
+  apply Subgroup.subset_closure
+  simp only [Set.mem_setOf_eq, IsUnit.unit_spec]
+  use v
+  constructor
+  · trivial
+  · rw [Q_euclid_neg_identity]
+    simp only [isUnit_iff_ne_zero, ne_eq, neg_eq_zero, OfNat.ofNat_ne_zero, not_false_eq_true,
+      pow_eq_zero_iff, norm_eq_zero]
     exact hv
 
 end CliffordAlgebra.Euclidean
