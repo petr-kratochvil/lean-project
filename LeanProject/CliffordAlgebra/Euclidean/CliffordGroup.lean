@@ -15,29 +15,45 @@ local notation "ι" => CliffordAlgebra.ι (Q_euclid_neg n)
 # Helper lemmas
 
 -/
-lemma helper_conjugate_inv (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    (↑x : Cl) = r • conjugate (↑x⁻¹ : Cl) := by
-  have h := congr_arg (· * conjugate (↑x⁻¹ : Cl)) hr
-  simp only [mul_assoc, (s324_iii x).1, mul_one, smul_one_mul] at h;
-  exact h
+protected
+lemma helper_conj_ne_zero (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
+    r ≠ 0 := by
+  have h_unit : IsUnit (r • (1 : Cl)) := by
+    rw [← hr];
+    exact x.isUnit.mul (isUnit_conjugate.mpr x.isUnit)
+  intro hr0
+  rw [hr0, zero_smul] at h_unit
+  exact not_isUnit_zero h_unit
 
-lemma helper_conjugate_inv_prod (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    r • ((↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl)) = 1 := by
-  have h_conjugate_inv := helper_conjugate_inv x r hr
-  rw [← mul_smul_comm, ← h_conjugate_inv, Units.inv_mul]
+protected
+lemma helper_conj_inv (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
+    (↑x : Cl) = r • conjugate (↑x⁻¹ : Cl) := by
+  have h := congr_arg (· * (↑(conjugate_unit x)⁻¹ : Cl)) hr
+  rw [conjugate_unit_inv_coe, smul_mul_assoc, one_mul] at h
+  rw [← h, mul_assoc, (s324_iii x).1, mul_one]
+
+protected
+lemma helper_conj_inv_2 (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
+    (↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl) = r⁻¹ • (1 : Cl) := by
+  have r_ne_zero : r ≠ 0 := Euclidean.helper_conj_ne_zero x r hr
+  have : r • ((↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl)) = 1 := by
+    rw [← mul_smul_comm, ← Euclidean.helper_conj_inv x r hr, Units.inv_mul]
+  have := congr_arg (r⁻¹ • ·) this
+  rw [smul_smul, inv_mul_cancel₀ r_ne_zero, one_smul] at this
+  exact this
 
 /-!
 # Definition of the norm on CliffordGroup
-We want to define the squared norm of `x` as `x * conjugate x`.
+We want to define the squared norm of `u` as `u * conjugate u`.
 
-Preparation lemmas:
-* `conjugate_mul_real`: `u * conjugate u` is a real number
-* `CliffordGroup.normSq_exists`:
-* `CliffordGroup.normSq_unique`:
-* `CliffordGroup.conj_nonneg`: `u * conjugate u` is non-negative
+Preparation theorems:
+* `CliffordGroup.conjugate_mul_real`: `u * conjugate u` is a real number
+* `CliffordGroup.normSq_exists`: just another formulation of `conjugate_mul_real`
+* `CliffordGroup.normSq_unique`: the real number for `u * conjugate u` is unique
+* `CliffordGroup.conjugate_nonneg`: `u * conjugate u` is non-negative
 
 -/
-lemma conjugate_mul_real (u : Clˣ) (hu : u ∈ CliffordGroup) :
+theorem CliffordGroup.conjugate_mul_real (u : Clˣ) (hu : u ∈ CliffordGroup) :
     (u : Cl) * (conjugate (u : Cl)) ∈ Submodule.span ℝ {1} := by
   refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
   · rintro u ⟨m, hm⟩
@@ -49,34 +65,24 @@ lemma conjugate_mul_real (u : Clˣ) (hu : u ∈ CliffordGroup) :
     simp only [Units.val_mul, conjugate.map_mul, mul_assoc]
     rw [← mul_assoc (↑y : Cl) (conjugate ↑y : Cl) (conjugate ↑x : Cl)]
     obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.mp y_conj
-    rw [← hs, smul_one_mul, Algebra.mul_smul_comm]
+    rw [← hs, smul_one_mul, mul_smul_comm]
     exact Submodule.smul_mem _ s x_conj
   · rintro x hx x_conj
     obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp x_conj
-    have h_r : IsUnit (r • (1 : Cl)) := by
-      rw [hr];
-      exact x.isUnit.mul (isUnit_conjugate.mpr x.isUnit)
-    have hr_ne : r ≠ 0 := by
-      intro hr0; rw [hr0, zero_smul] at h_r; exact not_isUnit_zero h_r
-    have h_prod := helper_conjugate_inv_prod x r hr.symm
-    have h_prod_2 := congr_arg (r⁻¹ • ·) h_prod
-    rw [smul_smul, inv_mul_cancel₀ hr_ne, one_smul] at h_prod_2
-    rw [h_prod_2]
+    rw [Euclidean.helper_conj_inv_2 x r hr.symm]
     exact Submodule.smul_mem _ (r⁻¹) (Submodule.subset_span (Set.mem_singleton 1))
 
-lemma CliffordGroup.normSq_exists (u : Clˣ) (hu : u ∈ CliffordGroup) :
+theorem CliffordGroup.normSq_exists (u : Clˣ) (hu : u ∈ CliffordGroup) :
     ∃ r : ℝ, (u : Cl) * conjugate (u : Cl) = r • 1 := by
-  have in_span : (u : Cl) * (conjugate (u : Cl)) ∈ Submodule.span ℝ {1} := conjugate_mul_real u hu
-  obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp in_span
-  use r
-  exact hr.symm
+  obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp (CliffordGroup.conjugate_mul_real u hu)
+  exact ⟨r, hr.symm⟩
 
-lemma CliffordGroup.normSq_unique (u : Clˣ) :
+theorem CliffordGroup.normSq_unique (u : Clˣ) :
     ∀ r s : ℝ, (↑u : Cl) * conjugate (↑u : Cl) = r • 1
     → (↑u : Cl) * conjugate (↑u : Cl) = s • 1
     → r = s := CliffordAlgebra.CliffordGroup.normSq_unique u
 
-lemma CliffordGroup.conj_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
+theorem CliffordGroup.conjugate_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
     ∀ r : ℝ, (↑u : Cl) * conjugate (↑u : Cl) = r • 1 → 0 ≤ r := by
   refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
   · rintro x ⟨m, hm⟩ r hr
@@ -86,46 +92,37 @@ lemma CliffordGroup.conj_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
     have := Q_euclid_nonpos n m
     linarith [this]
   · intro r hr
-    have heq : r = 1 := by
+    have : r = 1 := by
       simp only [Units.val_one, conjugate.map_one, mul_one] at hr
       nth_rw 1 [← one_smul ℝ 1] at hr
       rw [smul_left_inj (one_ne_zero)] at hr
       exact hr.symm
-    rw [heq]
+    rw [this]
     exact zero_le_one
   · rintro x y hx hy hx_nonneg hy_nonneg r hr
     obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists x hx
     obtain ⟨r_y, hr_y⟩ := CliffordGroup.normSq_exists y hy
     simp only [Units.val_mul, conjugate.map_mul, mul_assoc] at hr
     rw [← mul_assoc (↑y : Cl) (conjugate ↑y : Cl) (conjugate ↑x : Cl)] at hr
-    rw [hr_y, smul_one_mul, Algebra.mul_smul_comm, hr_x] at hr
+    rw [hr_y, smul_one_mul, mul_smul_comm, hr_x] at hr
     rw [smul_smul, smul_left_inj (one_ne_zero)] at hr
     have rx_nonneg := hx_nonneg r_x hr_x
     have ry_nonneg := hy_nonneg r_y hr_y
     rw [← hr]
     positivity
-  · rintro x hx hx_nonneg r hx_inv_nonneg
+  · rintro x hx hr_nonneg r hx_r
     obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists x hx
-    have h_prod := helper_conjugate_inv_prod x r_x hr_x
-    have r_x_ne_zero : r_x ≠ 0 := by
-      intro h
-      have := x.isUnit.mul (isUnit_conjugate.mpr x.isUnit)
-      rw [hr_x, h, zero_smul] at this;
-      exact not_isUnit_zero this
-    have hr_eq : r = r_x⁻¹ := CliffordGroup.normSq_unique x⁻¹ r r_x⁻¹ hx_inv_nonneg
-      (by
-        have := congr_arg (r_x⁻¹ • ·) h_prod
-        rwa [smul_smul, inv_mul_cancel₀ r_x_ne_zero, one_smul] at this
-      )
+    have hx_r_inv := Euclidean.helper_conj_inv_2 x r_x hr_x
+    have hr_eq : r = r_x⁻¹ := CliffordGroup.normSq_unique x⁻¹ r r_x⁻¹ hx_r hx_r_inv
     rw [hr_eq];
-    exact inv_nonneg.mpr (hx_nonneg r_x hr_x)
+    exact inv_nonneg.mpr (hr_nonneg r_x hr_x)
 
 /- ## Definition: norm squared
 
 Using `Classical.choose` and above preparation lemmas.
 
-* `CliffordGroup.normSq`
-* `CliffordGroup.normSq_spec`
+* `CliffordGroup.normSq`: Definition of the norm squared
+* `CliffordGroup.normSq_spec`: The norm squared has the definitional property
 * `CliffordGroup.normSq_mul`: The squared norm preserves multiplication
 * `CliffordGroup.normSq_nonneg` : The squared norm is non-negative
 
@@ -148,9 +145,10 @@ theorem CliffordGroup.normSq_mul (x y : Clˣ) (hx : x ∈ CliffordGroup) (hy : y
     (CliffordGroup.normSq_spec (x * y) (CliffordGroup.mul_mem hx hy))
     (by
       simp only [Units.val_mul, conjugate.map_mul, mul_assoc]
-      rw [← mul_assoc (↑y : Cl), CliffordGroup.normSq_spec y hy,
-          smul_one_mul, Algebra.mul_smul_comm, CliffordGroup.normSq_spec x hx,
-          smul_smul, mul_comm])
+      rw [← mul_assoc (↑y : Cl)]
+      rw [CliffordGroup.normSq_spec y hy, smul_one_mul, mul_smul_comm]
+      rw [CliffordGroup.normSq_spec x hx, smul_smul, mul_comm]
+    )
 
 /-
 The norm is non-negative
@@ -161,7 +159,7 @@ lemma CliffordGroup.normSq_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
   suffices h : ∀ r : ℝ, (↑u : Cl) * conjugate (↑u : Cl) = r • 1 → 0 ≤ r by
     specialize h (CliffordGroup.normSq u hu)
     exact h (CliffordGroup.normSq_spec u hu)
-  exact CliffordGroup.conj_nonneg u hu
+  exact CliffordGroup.conjugate_nonneg u hu
 
 
 noncomputable section norm
@@ -169,9 +167,9 @@ noncomputable section norm
 /-!
 ## Definition of the `Norm` instance
 
-* instance of `Norm` on Clifford group
+* instance of `Norm` on Clifford group: defined as `Real.sqrt (u * conjugate u)`
 * example usage
-* `norm_def`: a rfl lemma
+* `CliffordGroup.norm_def`: a rfl lemma
 * `CliffordGroup.norm_mul`: the norm is multiplicative
 
 -/
@@ -202,7 +200,7 @@ Non-zero vectors are invertible, so they belong to the Clifford group
 
 -/
 theorem image_vector_mem_cliffordGroup (hv : v ≠ 0) :
-    (isUnit_vector n v hv).unit ∈ CliffordGroup := by
+  let v_unit := (isUnit_vector n v hv).unit; v_unit ∈ CliffordGroup := by
   apply Subgroup.subset_closure
   simp only [Set.mem_setOf_eq, IsUnit.unit_spec]
   use v

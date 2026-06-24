@@ -117,16 +117,23 @@ theorem isUnit_involute {a : Cl} : IsUnit (involute a) ↔ IsUnit a := by
 /-
 Conjugate preserves units (maps units to units)
 -/
+def conjugate_unit (u : Clˣ) : Clˣ :=
+  ⟨conjugate ↑u, conjugate ↑u⁻¹, (s324_iii u).1, (s324_iii u).2⟩
+
+@[simp]
+lemma conjugate_unit_inv_coe (u : Clˣ) : (↑(conjugate_unit u)⁻¹ : Cl) = conjugate (↑(u⁻¹) : Cl) :=
+  by simp only [conjugate_unit, Units.inv_mk]
+
 theorem isUnit_conjugate {a : Cl} : IsUnit (conjugate a) ↔ IsUnit a := by
   constructor
   · intro hconj
     rw [← conjugate_conjugate a]
     obtain ⟨u, hu⟩ := hconj
     rw [← hu]
-    exact ⟨⟨conjugate ↑u, conjugate ↑u⁻¹, (s324_iii u).1, (s324_iii u).2⟩, rfl⟩
+    exact ⟨conjugate_unit u, rfl⟩
   · intro ha
     obtain ⟨u, rfl⟩ := ha
-    exact ⟨⟨conjugate ↑u, conjugate ↑u⁻¹, (s324_iii u).1, (s324_iii u).2⟩, rfl⟩
+    exact ⟨conjugate_unit u, rfl⟩
 
 /-! # Statement 3.2.5
 * (i) `v * conjugate v = -Q(v)` (which is ‖x‖² in Euclidean case)
