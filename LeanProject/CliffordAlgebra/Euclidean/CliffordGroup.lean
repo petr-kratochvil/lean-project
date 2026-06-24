@@ -1,5 +1,5 @@
 import LeanProject.CliffordAlgebra.CliffordGroup
-import LeanProject.CliffordAlgebra.Euclidean.Euclidean
+import LeanProject.CliffordAlgebra.Euclidean.Conjugate
 
 open CliffordAlgebra
 namespace CliffordAlgebra.Euclidean
@@ -10,37 +10,6 @@ local notation "V" => EuclideanSpace ℝ (Fin n)
 local notation "Q" => Q_euclid_neg n
 local notation "Cl" => CliffordAlgebra (Q_euclid_neg n)
 local notation "ι" => CliffordAlgebra.ι (Q_euclid_neg n)
-
-/-!
-# Helper lemmas
-
--/
-protected
-lemma helper_conj_ne_zero (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    r ≠ 0 := by
-  have h_unit : IsUnit (r • (1 : Cl)) := by
-    rw [← hr];
-    exact x.isUnit.mul (isUnit_conjugate.mpr x.isUnit)
-  intro hr0
-  rw [hr0, zero_smul] at h_unit
-  exact not_isUnit_zero h_unit
-
-protected
-lemma helper_conj_inv (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    (↑x : Cl) = r • conjugate (↑x⁻¹ : Cl) := by
-  have h := congr_arg (· * (↑(conjugate_unit x)⁻¹ : Cl)) hr
-  rw [conjugate_unit_inv_coe, smul_mul_assoc, one_mul] at h
-  rw [← h, mul_assoc, (s324_iii x).1, mul_one]
-
-protected
-lemma helper_conj_inv_2 (x : Clˣ) (r : ℝ) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    (↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl) = r⁻¹ • (1 : Cl) := by
-  have r_ne_zero : r ≠ 0 := Euclidean.helper_conj_ne_zero x r hr
-  have : r • ((↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl)) = 1 := by
-    rw [← mul_smul_comm, ← Euclidean.helper_conj_inv x r hr, Units.inv_mul]
-  have := congr_arg (r⁻¹ • ·) this
-  rw [smul_smul, inv_mul_cancel₀ r_ne_zero, one_smul] at this
-  exact this
 
 /-!
 # Definition of the norm on CliffordGroup
@@ -69,7 +38,7 @@ theorem CliffordGroup.conjugate_mul_real (u : Clˣ) (hu : u ∈ CliffordGroup) :
     exact Submodule.smul_mem _ s x_conj
   · rintro x hx x_conj
     obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp x_conj
-    rw [Euclidean.helper_conj_inv_2 x r hr.symm]
+    rw [CliffordAlgebra.helper_conj_inv_2 x r hr.symm]
     exact Submodule.smul_mem _ (r⁻¹) (Submodule.subset_span (Set.mem_singleton 1))
 
 theorem CliffordGroup.normSq_exists (u : Clˣ) (hu : u ∈ CliffordGroup) :
@@ -112,7 +81,7 @@ theorem CliffordGroup.conjugate_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
     positivity
   · rintro x hx hr_nonneg r hx_r
     obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists x hx
-    have hx_r_inv := Euclidean.helper_conj_inv_2 x r_x hr_x
+    have hx_r_inv := CliffordAlgebra.helper_conj_inv_2 x r_x hr_x
     have hr_eq : r = r_x⁻¹ := CliffordGroup.normSq_unique x⁻¹ r r_x⁻¹ hx_r hx_r_inv
     rw [hr_eq];
     exact inv_nonneg.mpr (hr_nonneg r_x hr_x)
