@@ -1,3 +1,4 @@
--- # Here will be usage examples of CliffordAlgebra
-
-import LeanProject.CliffordAlgebra.Euclidean.Euclidean
+import LeanProject.CliffordAlgebra.Basic
+import LeanProject.CliffordAlgebra.CliffordGroup
+import LeanProject.CliffordAlgebra.Conjugate
+import LeanProject.CliffordAlgebra.Euclidean

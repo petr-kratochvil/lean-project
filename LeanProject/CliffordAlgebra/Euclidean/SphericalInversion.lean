@@ -1,4 +1,4 @@
-import LeanProject.CliffordAlgebra.Euclidean.Euclidean
+import LeanProject.CliffordAlgebra.Euclidean.VectorInversion
 
 namespace CliffordAlgebra.Euclidean
 

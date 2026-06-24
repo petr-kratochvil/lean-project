@@ -1,0 +1,5 @@
+import LeanProject.CliffordAlgebra.Euclidean.Basic
+import LeanProject.CliffordAlgebra.Euclidean.CliffordGroup
+import LeanProject.CliffordAlgebra.Euclidean.Conjugate
+import LeanProject.CliffordAlgebra.Euclidean.SphericalInversion
+import LeanProject.CliffordAlgebra.Euclidean.VectorInversion
