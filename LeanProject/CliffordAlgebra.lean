@@ -1,6 +1,0 @@
-import LeanProject.CliffordAlgebra.Basic
-import LeanProject.CliffordAlgebra.CliffordGroup
-import LeanProject.CliffordAlgebra.CliffordGroupNormSq
-import LeanProject.CliffordAlgebra.Conjugate
-import LeanProject.CliffordAlgebra.ConjugateUnits
-import LeanProject.CliffordAlgebra.Euclidean
