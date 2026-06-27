@@ -1,4 +1,3 @@
-import Mathlib
 import LeanProject.CliffordAlgebra.ConjugateUnits
 
 namespace CliffordAlgebra
@@ -22,11 +21,33 @@ local notation "ι" => CliffordAlgebra.ι Q
 noncomputable def CliffordGroup : Subgroup Clˣ :=
   Subgroup.closure { u : Clˣ | ∃ m : M, (↑u : Cl) = ι m ∧ IsUnit (Q m)}
 
+local notation "ClGroup" => @CliffordGroup R _ M _ _ Q
+
 /-
-Involute
+Examples:
+* Get `ClGroup` from `Clˣ`
+* Get `Clˣ` from `ClGroup`
+* Get `Cl` from `ClGroup`
+* `ClGroup` written as a subtype
+(Coercion works too)
+
 -/
-lemma involute_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
-    involute_unit u ∈ CliffordGroup := by
+example (u : Clˣ) (hu : u ∈ ClGroup) : ClGroup := ⟨u, hu⟩
+
+example (x : ClGroup) : Clˣ := x.1
+example (x : ClGroup) : Clˣ := ↑x
+
+example (x : ClGroup) : Cl := ↑(↑x : Clˣ)
+example (x : ClGroup) : Cl := ↑x.1
+example (x : ClGroup) : Cl := x.1.val
+
+example : { x : Clˣ // x ∈ CliffordGroup } = ClGroup := rfl
+
+/-
+Clifford group is closed on involute
+-/
+theorem involute_mem_cliffordGroup {u : Clˣ} (hu : u ∈ ClGroup) :
+    involute_unit u ∈ ClGroup := by
   rw [involute_unit]
   refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
   · rintro u ⟨m, hm1, hm2⟩
@@ -43,7 +64,7 @@ lemma involute_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
     simp only [map_inv, inv_mem_iff]
     exact x_mem
 
-def CliffordGroup.involuteHom : @CliffordGroup R _ M _ _ Q →* @CliffordGroup R _ M _ _ Q where
+def CliffordGroup.involuteHom : ClGroup →* ClGroup where
   toFun u := ⟨involute_unit u.1, involute_mem_cliffordGroup u.2⟩
   map_one' := by
     simp only [involute_unit, OneMemClass.coe_one, Subgroup.mk_eq_one, map_one]
@@ -51,10 +72,10 @@ def CliffordGroup.involuteHom : @CliffordGroup R _ M _ _ Q →* @CliffordGroup R
     simp only [involute_unit, Subgroup.coe_mul, map_mul, MulMemClass.mk_mul_mk]
 
 /-
-Reverse
+Clifford group is closed on reverse
 -/
-lemma reverse_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
-    reverse_unit u ∈ CliffordGroup := by
+theorem reverse_mem_cliffordGroup {u : Clˣ} (hu : u ∈ ClGroup) :
+    reverse_unit u ∈ ClGroup := by
   rw [reverse_unit]
   refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
   · rintro u ⟨m, hm1, hm2⟩
@@ -63,7 +84,7 @@ lemma reverse_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
     · simp [reverse_unitHomOp, reverse_homOp, hm1]
     · exact hm2
   · rw [MonoidHom.map_one, MulOpposite.unop_one]
-    exact one_mem CliffordGroup
+    exact CliffordGroup.one_mem
   · rintro x y hx hy x_mem y_mem
     rw [MonoidHom.map_mul, MulOpposite.unop_mul]
     exact CliffordGroup.mul_mem y_mem x_mem
@@ -71,21 +92,18 @@ lemma reverse_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
     rw [MonoidHom.map_inv, MulOpposite.unop_inv]
     exact inv_mem x_mem
 
-def CliffordGroup.reverseFun (u : @CliffordGroup R _ M _ _ Q) : @CliffordGroup R _ M _ _ Q :=
+def CliffordGroup.reverseFun (u : ClGroup) : ClGroup :=
   ⟨reverse_unit u.1, reverse_mem_cliffordGroup u.2⟩
 
 /-
-Conjugate
+Clifford group is closed on conjugate
 -/
-lemma conjugate_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
-    conjugate_unit u ∈ CliffordGroup := by
-  have h : conjugate_unit u = reverse_unit (involute_unit u) := by
-    -- simp only [reverse_unit, involute_unit, conjugate_unit]
-    rfl
+theorem conjugate_mem_cliffordGroup {u : Clˣ} (hu : u ∈ ClGroup) :
+    conjugate_unit u ∈ ClGroup := by
   rw [conjugate_unit_comp_def]
   exact reverse_mem_cliffordGroup (involute_mem_cliffordGroup hu)
 
-def CliffordGroup.conjugateFun (u : @CliffordGroup R _ M _ _ Q) : @CliffordGroup R _ M _ _ Q :=
+def CliffordGroup.conjugateFun (u : ClGroup) : ClGroup :=
   ⟨conjugate_unit u.1, conjugate_mem_cliffordGroup u.2⟩
 
 end CliffordAlgebra

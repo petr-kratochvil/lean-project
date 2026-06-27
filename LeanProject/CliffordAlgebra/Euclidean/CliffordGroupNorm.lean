@@ -1,6 +1,9 @@
 import LeanProject.CliffordAlgebra.CliffordGroupNormSq
 import LeanProject.CliffordAlgebra.Euclidean.Conjugate
 
+/- this for synthesizing instance `[Nontrivial (CliffordAlgebra Q)]` (necessary for `normSq`) -/
+import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
+
 open CliffordAlgebra
 namespace CliffordAlgebra.Euclidean
 
@@ -10,6 +13,7 @@ local notation "V" => EuclideanSpace ℝ (Fin n)
 local notation "Q" => Q_euclid_neg n
 local notation "Cl" => CliffordAlgebra (Q_euclid_neg n)
 local notation "ι" => CliffordAlgebra.ι (Q_euclid_neg n)
+local notation "ClGroup" => @CliffordGroup ℝ _ V _ _ Q
 
 /-!
 # Norm squared - Specialization for Euclidean spaces
@@ -41,8 +45,8 @@ theorem CliffordGroup.conjugate_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
     rw [this]
     exact zero_le_one
   · rintro x y hx hy hx_nonneg hy_nonneg r hr
-    obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists x hx
-    obtain ⟨r_y, hr_y⟩ := CliffordGroup.normSq_exists y hy
+    obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists ⟨x, hx⟩
+    obtain ⟨r_y, hr_y⟩ := CliffordGroup.normSq_exists ⟨y, hy⟩
     simp only [Units.val_mul, conjugate.map_mul, mul_assoc] at hr
     rw [← mul_assoc (↑y : Cl) (conjugate ↑y : Cl) (conjugate ↑x : Cl)] at hr
     rw [hr_y, smul_one_mul, mul_smul_comm, hr_x] at hr
@@ -52,17 +56,17 @@ theorem CliffordGroup.conjugate_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
     rw [← hr]
     positivity
   · rintro x hx hr_nonneg r hx_r
-    obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists x hx
+    obtain ⟨r_x, hr_x⟩ := CliffordGroup.normSq_exists ⟨x, hx⟩
     have hx_r_inv := CliffordAlgebra.helper_conj_inv_2 x r_x hr_x
-    have hr_eq : r = r_x⁻¹ := CliffordGroup.normSq_unique x⁻¹ r r_x⁻¹ hx_r hx_r_inv
+    have hr_eq : r = r_x⁻¹ := CliffordGroup.normSq_unique ⟨x, hx⟩⁻¹ r r_x⁻¹ hx_r hx_r_inv
     rw [hr_eq];
     exact inv_nonneg.mpr (hr_nonneg r_x hr_x)
 
 theorem CliffordGroup.normSq_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    0 ≤ CliffordGroup.normSq u hu := by
-  suffices h : ∀ r : ℝ, (↑u : Cl) * conjugate (↑u : Cl) = r • 1 → 0 ≤ r by
-    specialize h (CliffordGroup.normSq u hu)
-    exact h (CliffordGroup.normSq_spec u hu)
+    0 ≤ CliffordGroup.normSq ⟨u, hu⟩ := by
+  suffices h : ∀ r : ℝ, (u * conjugate_unit u) = r • (1 : Cl) → 0 ≤ r by
+    specialize h (CliffordGroup.normSq ⟨u, hu⟩)
+    exact h (CliffordGroup.normSq_spec ⟨u, hu⟩)
   exact CliffordGroup.conjugate_nonneg u hu
 
 noncomputable section norm
@@ -76,24 +80,22 @@ noncomputable section norm
 * `CliffordGroup.norm_mul`: the norm is multiplicative
 
 -/
-instance : Norm { x : Clˣ // x ∈ CliffordGroup } :=
-  ⟨fun x => Real.sqrt (CliffordGroup.normSq x.val x.property)⟩
+instance : Norm ClGroup := ⟨fun x => Real.sqrt (CliffordGroup.normSq x)⟩
 
-/- Example usage of the Norm notation -/
-example (cg : ↥(@CliffordGroup ℝ _ V _ _ Q)) : Real := ‖cg‖
-example (cg : { x : Clˣ // x ∈ CliffordGroup }) : Real := ‖cg‖
-example (cg : Clˣ) (hcg : cg ∈ CliffordGroup) : Real :=
-  ‖(⟨cg, hcg⟩ : { x : Clˣ // x ∈ CliffordGroup })‖
+/- Example usage of the Norm instance -/
+example (a : ClGroup) : Real := ‖a‖
+example (a : Clˣ) (ha : a ∈ CliffordGroup) : Real := ‖(⟨a, ha⟩ : ClGroup)‖
+example (a : Cl) (ha_unit : (IsUnit a)) (ha_group : ha_unit.unit ∈ CliffordGroup) : Real :=
+  ‖(⟨ha_unit.unit, ha_group⟩ : ClGroup)‖
 
 end norm
 
 @[simp]
-lemma CliffordGroup.norm_def (x : { x : Clˣ // x ∈ CliffordGroup }) :
-    ‖x‖ = Real.sqrt (CliffordGroup.normSq x.val x.property) := rfl
+lemma CliffordGroup.norm_def (x : ClGroup) : ‖x‖ = Real.sqrt (CliffordGroup.normSq x) := rfl
 
-theorem CliffordGroup.norm_mul (a b : ↥(@CliffordGroup ℝ _ V _ _ Q)) : ‖a * b‖ = ‖a‖ * ‖b‖ := by
-  simp only [CliffordGroup.norm_def, Subgroup.coe_mul]
-  rw [CliffordGroup.normSq_mul (a : Clˣ) (b : Clˣ) a.property b.property]
-  rw [Real.sqrt_mul (CliffordGroup.normSq_nonneg a.val a.property)]
+theorem CliffordGroup.norm_mul (a b : ClGroup) : ‖a * b‖ = ‖a‖ * ‖b‖ := by
+  simp only [norm_def]
+  rw [CliffordGroup.normSq_mul]
+  rw [Real.sqrt_mul (normSq_nonneg a.val a.property)]
 
 end CliffordAlgebra.Euclidean

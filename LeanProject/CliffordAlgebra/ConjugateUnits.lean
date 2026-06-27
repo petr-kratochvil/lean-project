@@ -10,8 +10,6 @@ namespace CliffordAlgebra
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M]
   [Module R M] {Q : QuadraticForm R M}
 
-variable (v w : M) (x a b : CliffordAlgebra Q) (unit : (CliffordAlgebra Q)ˣ)
-
 local notation "Cl" => CliffordAlgebra Q
 local notation "ι" => CliffordAlgebra.ι Q
 

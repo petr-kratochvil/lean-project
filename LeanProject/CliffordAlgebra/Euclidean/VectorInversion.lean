@@ -1,6 +1,5 @@
 import LeanProject.CliffordAlgebra.Euclidean.Conjugate
 import LeanProject.CliffordAlgebra.Euclidean.CliffordGroupNorm
-import Mathlib.Analysis.InnerProductSpace.PiL2
 
 open scoped RealInnerProductSpace
 namespace CliffordAlgebra.Euclidean

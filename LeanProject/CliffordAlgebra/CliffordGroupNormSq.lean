@@ -1,4 +1,3 @@
-import Mathlib
 import LeanProject.CliffordAlgebra.CliffordGroup
 
 namespace CliffordAlgebra
@@ -6,7 +5,7 @@ namespace CliffordAlgebra
 section CommRing_R
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M]
-  [Module R M] {Q : QuadraticForm R M} (v : M)
+  [Module R M] {Q : QuadraticForm R M}
 
 local notation "Cl" => CliffordAlgebra Q
 local notation "ι" => CliffordAlgebra.ι Q
@@ -61,6 +60,7 @@ variable {R : Type*} [Field R] {M : Type*} [AddCommGroup M]
   [Module R M] {Q : QuadraticForm R M} [Nontrivial (CliffordAlgebra Q)]
 
 local notation "Cl" => CliffordAlgebra Q
+local notation "ClGroup" => @CliffordGroup R _ M _ _ Q
 
 protected
 lemma helper_conj_inv_2 (x : Clˣ) (r : R)
@@ -73,9 +73,9 @@ lemma helper_conj_inv_2 (x : Clˣ) (r : R)
   rw [smul_smul, inv_mul_cancel₀ r_ne_zero, one_smul] at this
   exact this
 
-theorem CliffordGroup.conjugate_mul_field (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    (u : Cl) * (conjugate (u : Cl)) ∈ Submodule.span R {1} := by
-  refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
+theorem CliffordGroup.conjugate_mul_field (u : ClGroup) :
+    (u.val : Cl) * (conjugate (u.val : Cl)) ∈ Submodule.span R {1} := by
+  refine Subgroup.closure_induction ?_ ?_ ?_ ?_ u.property
   · rintro u ⟨m, hm⟩
     rw [hm.left, s325_i, Algebra.algebraMap_eq_smul_one]
     exact Submodule.smul_mem _ (-Q m) (Submodule.subset_span (Set.mem_singleton 1))
@@ -92,41 +92,37 @@ theorem CliffordGroup.conjugate_mul_field (u : Clˣ) (hu : u ∈ CliffordGroup) 
     rw [CliffordAlgebra.helper_conj_inv_2 x r hr.symm]
     exact Submodule.smul_mem _ (r⁻¹) (Submodule.subset_span (Set.mem_singleton 1))
 
-theorem CliffordGroup.normSq_exists (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    ∃ r : R, (↑u : Cl) * conjugate (↑u : Cl) = r • 1 := by
-  obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp (CliffordGroup.conjugate_mul_field u hu)
+theorem CliffordGroup.normSq_exists (u : ClGroup) : ∃ r : R,
+    (u.val : Cl) * conjugate (u.val : Cl) = r • (1 : Cl) := by
+  have in_span := conjugate_mul_field u
+  obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp in_span
   exact ⟨r, hr.symm⟩
 
-theorem CliffordGroup.normSq_unique
-   (u : Clˣ) :
- ∀ r s : R, (↑u : Cl) * conjugate (↑u : Cl) = r • 1
-    → (↑u : Cl) * conjugate (↑u : Cl) = s • 1
+theorem CliffordGroup.normSq_unique (u : ClGroup) :
+    ∀ r s : R,
+      (↑u.1 : Cl) * conjugate (↑u.1 : Cl) = r • 1
+    → (↑u.1 : Cl) * conjugate (↑u.1 : Cl) = s • 1
     → r = s := by
   intros r s hr hs
   rw [hr] at hs
   rw [smul_left_inj (one_ne_zero)] at hs
   exact hs
 
-noncomputable def CliffordGroup.normSq (u : Clˣ) (hu : u ∈ CliffordGroup) : R :=
-  Classical.choose (CliffordGroup.normSq_exists u hu)
+noncomputable def CliffordGroup.normSq (u : ClGroup) : R :=
+  Classical.choose (normSq_exists u)
 
-theorem CliffordGroup.normSq_spec (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    (↑u : Cl) * conjugate (↑u : Cl) = CliffordGroup.normSq u hu • 1 :=
-  Classical.choose_spec (CliffordGroup.normSq_exists u hu)
+theorem CliffordGroup.normSq_spec (u : ClGroup) :
+    (↑u.1 : Cl) * conjugate (↑u.1 : Cl) = CliffordGroup.normSq u • 1 :=
+  Classical.choose_spec (normSq_exists u)
 
-theorem CliffordGroup.normSq_mul (x y : Clˣ) (hx : x ∈ CliffordGroup) (hy : y ∈ CliffordGroup) :
-    CliffordGroup.normSq (x * y) (CliffordGroup.mul_mem hx hy) =
-    CliffordGroup.normSq x hx * CliffordGroup.normSq y hy :=
-  CliffordGroup.normSq_unique (x * y) _ _
-    (CliffordGroup.normSq_spec (x * y) (CliffordGroup.mul_mem hx hy))
-    (by
-      simp only [Units.val_mul, conjugate.map_mul, mul_assoc]
-      rw [← mul_assoc (↑y : Cl)]
-      rw [CliffordGroup.normSq_spec y hy, smul_one_mul, mul_smul_comm]
-      rw [CliffordGroup.normSq_spec x hx, smul_smul, mul_comm]
-    )
+theorem CliffordGroup.normSq_mul (u v : ClGroup) : normSq (u * v) = normSq u * normSq v := by
+  have spec : ((u * v).val : Cl) * _ = _ := normSq_spec (u * v)
+  refine normSq_unique (u * v) _ _ spec ?_
+  simp only [Subgroup.coe_mul, Units.val_mul, conjugate.map_mul, mul_assoc]
+  rw [← mul_assoc (v.val : Cl)]
+  rw [normSq_spec v, smul_one_mul, mul_smul_comm]
+  rw [normSq_spec u, smul_smul, mul_comm]
 
 end Field_R
 
 end CliffordAlgebra
-
