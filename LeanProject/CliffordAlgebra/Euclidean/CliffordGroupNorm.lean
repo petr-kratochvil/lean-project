@@ -1,4 +1,4 @@
-import LeanProject.CliffordAlgebra.CliffordGroup
+import LeanProject.CliffordAlgebra.CliffordGroupNormSq
 import LeanProject.CliffordAlgebra.Euclidean.Conjugate
 
 open CliffordAlgebra
@@ -16,7 +16,7 @@ local notation "ι" => CliffordAlgebra.ι (Q_euclid_neg n)
 
 Here we have R = ℝ and
 * the `normSq` is non-negative
-* we can usee `Real.sqrt` to define the `Norm` instance
+* we can use `Real.sqrt` to define the `Norm` instance
 
 Theorems:
 * `CliffordGroup.conjugate_nonneg`: `u * conjugate u` is non-negative
@@ -68,7 +68,7 @@ theorem CliffordGroup.normSq_nonneg (u : Clˣ) (hu : u ∈ CliffordGroup) :
 noncomputable section norm
 
 /-!
-# Definition of the `Norm` instance
+## Definition of the `Norm` instance
 
 * instance of `Norm` on Clifford group: defined as `Real.sqrt (u * conjugate u)`
 * example usage

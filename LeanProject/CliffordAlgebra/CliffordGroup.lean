@@ -1,5 +1,5 @@
 import Mathlib
-import LeanProject.CliffordAlgebra.Conjugate
+import LeanProject.CliffordAlgebra.ConjugateUnits
 
 namespace CliffordAlgebra
 
@@ -10,10 +10,9 @@ Defined as the closure of invertible vectors
 * Generally,`Q v` being an invertible element of `[CommRing R]` is necessary
 * If `R` is a field, the condition simplifies to `Q v ≠ 0`
 
+The Clifford group is closed under `involute`, `reverse` and `conjugate`.
+
 -/
-
-section CommRing_R
-
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M]
   [Module R M] {Q : QuadraticForm R M} (v : M)
 
@@ -23,121 +22,70 @@ local notation "ι" => CliffordAlgebra.ι Q
 noncomputable def CliffordGroup : Subgroup Clˣ :=
   Subgroup.closure { u : Clˣ | ∃ m : M, (↑u : Cl) = ι m ∧ IsUnit (Q m)}
 
-/-!
-Helper lemmas for the squared norm
+/-
+Involute
 -/
-
-protected
-lemma helper_conj_ne_zero [Nontrivial Cl] (x : Clˣ) (r : R)
-    (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) : r ≠ 0 := by
-  have h_unit : IsUnit (r • (1 : Cl)) := by
-    rw [← hr];
-    exact x.isUnit.mul (isUnit_conjugate.mpr x.isUnit)
-  intro hr0
-  rw [hr0, zero_smul] at h_unit
-  exact not_isUnit_zero h_unit
-
-protected
-lemma helper_conj_inv (x : Clˣ) (r : R) (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    (↑x : Cl) = r • conjugate (↑x⁻¹ : Cl) := by
-  have h := congr_arg (· * (↑(conjugate_unit x)⁻¹ : Cl)) hr
-  rw [conjugate_unit_inv_coe, smul_mul_assoc, one_mul] at h
-  rw [← h, mul_assoc, (s324_iii x).1, mul_one]
-
-end CommRing_R
-
-/-!
-# Squared norm for a nontrivial Clifford group over a field
-Can be defined as `u * conjugate u`, if we have
-* `[Field R]`
-* `[Nontrivial Cl]`
-
-Preparation theorems:
-* `CliffordGroup.conjugate_mul_field`:
-  `u * conjugate u` is a "member of the field"
-    - more precisely, a member of `Submodule.span R {1}`
-* `CliffordGroup.normSq_exists`: existence of the squered norm
-* `CliffordGroup.normSq_unique`: uniqueness of the squared norm
-
-Definition:
-* `CliffordGroup.normSq`: Definition of the norm squared using `Classical.choose`
-
-Theorems:
-* `CliffordGroup.normSq_spec`: The norm squared has the definitional property
-* `CliffordGroup.normSq_mul`: The squared norm preserves multiplication
-
--/
-section Field_R
-
-variable {R : Type*} [Field R] {M : Type*} [AddCommGroup M]
-  [Module R M] {Q : QuadraticForm R M} [Nontrivial (CliffordAlgebra Q)]
-
-local notation "Cl" => CliffordAlgebra Q
-
-protected
-lemma helper_conj_inv_2 (x : Clˣ) (r : R)
-    (hr : (↑x : Cl) * conjugate (↑x : Cl) = r • 1) :
-    (↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl) = r⁻¹ • (1 : Cl) := by
-  have r_ne_zero : r ≠ 0 := CliffordAlgebra.helper_conj_ne_zero x r hr
-  have : r • ((↑x⁻¹ : Cl) * conjugate (↑x⁻¹ : Cl)) = 1 := by
-    rw [← mul_smul_comm, ← CliffordAlgebra.helper_conj_inv x r hr, Units.inv_mul]
-  have := congr_arg (r⁻¹ • ·) this
-  rw [smul_smul, inv_mul_cancel₀ r_ne_zero, one_smul] at this
-  exact this
-
-theorem CliffordGroup.conjugate_mul_field (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    (u : Cl) * (conjugate (u : Cl)) ∈ Submodule.span R {1} := by
+lemma involute_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
+    involute_unit u ∈ CliffordGroup := by
+  rw [involute_unit]
   refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
-  · rintro u ⟨m, hm⟩
-    rw [hm.left, s325_i, Algebra.algebraMap_eq_smul_one]
-    exact Submodule.smul_mem _ (-Q m) (Submodule.subset_span (Set.mem_singleton 1))
-  · rw [Units.val_one, conjugate.map_one, mul_one]
-    exact Submodule.subset_span (Set.mem_singleton 1)
-  · rintro x y hx hy x_conj y_conj
-    simp only [Units.val_mul, conjugate.map_mul, mul_assoc]
-    rw [← mul_assoc (↑y : Cl) (conjugate ↑y : Cl) (conjugate ↑x : Cl)]
-    obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.mp y_conj
-    rw [← hs, smul_one_mul, mul_smul_comm]
-    exact Submodule.smul_mem _ s x_conj
-  · rintro x hx x_conj
-    obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp x_conj
-    rw [CliffordAlgebra.helper_conj_inv_2 x r hr.symm]
-    exact Submodule.smul_mem _ (r⁻¹) (Submodule.subset_span (Set.mem_singleton 1))
+  · rintro u ⟨m, hm1, hm2⟩
+    apply Subgroup.subset_closure
+    refine ⟨-m, ?_, ?_⟩
+    · rw [map_neg, coe_involute_unitHom, hm1]
+      exact involute_ι m
+    · rwa [QuadraticMap.map_neg]
+  · simp only [map_one, one_mem]
+  · rintro x y hx hy x_mem y_mem
+    simp only [map_mul]
+    apply CliffordGroup.mul_mem x_mem y_mem
+  · rintro x hx x_mem
+    simp only [map_inv, inv_mem_iff]
+    exact x_mem
 
-theorem CliffordGroup.normSq_exists (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    ∃ r : R, (↑u : Cl) * conjugate (↑u : Cl) = r • 1 := by
-  obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp (CliffordGroup.conjugate_mul_field u hu)
-  exact ⟨r, hr.symm⟩
+def CliffordGroup.involuteHom : @CliffordGroup R _ M _ _ Q →* @CliffordGroup R _ M _ _ Q where
+  toFun u := ⟨involute_unit u.1, involute_mem_cliffordGroup u.2⟩
+  map_one' := by
+    simp only [involute_unit, OneMemClass.coe_one, Subgroup.mk_eq_one, map_one]
+  map_mul' u v := by
+    simp only [involute_unit, Subgroup.coe_mul, map_mul, MulMemClass.mk_mul_mk]
 
-theorem CliffordGroup.normSq_unique
-   (u : Clˣ) :
- ∀ r s : R, (↑u : Cl) * conjugate (↑u : Cl) = r • 1
-    → (↑u : Cl) * conjugate (↑u : Cl) = s • 1
-    → r = s := by
-  intros r s hr hs
-  rw [hr] at hs
-  rw [smul_left_inj (one_ne_zero)] at hs
-  exact hs
+/-
+Reverse
+-/
+lemma reverse_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
+    reverse_unit u ∈ CliffordGroup := by
+  rw [reverse_unit]
+  refine Subgroup.closure_induction ?_ ?_ ?_ ?_ hu
+  · rintro u ⟨m, hm1, hm2⟩
+    apply Subgroup.subset_closure
+    refine ⟨m, ?_, ?_⟩
+    · simp [reverse_unitHomOp, reverse_homOp, hm1]
+    · exact hm2
+  · rw [MonoidHom.map_one, MulOpposite.unop_one]
+    exact one_mem CliffordGroup
+  · rintro x y hx hy x_mem y_mem
+    rw [MonoidHom.map_mul, MulOpposite.unop_mul]
+    exact CliffordGroup.mul_mem y_mem x_mem
+  · rintro x hx x_mem
+    rw [MonoidHom.map_inv, MulOpposite.unop_inv]
+    exact inv_mem x_mem
 
-noncomputable def CliffordGroup.normSq (u : Clˣ) (hu : u ∈ CliffordGroup) : R :=
-  Classical.choose (CliffordGroup.normSq_exists u hu)
+def CliffordGroup.reverseFun (u : @CliffordGroup R _ M _ _ Q) : @CliffordGroup R _ M _ _ Q :=
+  ⟨reverse_unit u.1, reverse_mem_cliffordGroup u.2⟩
 
-theorem CliffordGroup.normSq_spec (u : Clˣ) (hu : u ∈ CliffordGroup) :
-    (↑u : Cl) * conjugate (↑u : Cl) = CliffordGroup.normSq u hu • 1 :=
-  Classical.choose_spec (CliffordGroup.normSq_exists u hu)
+/-
+Conjugate
+-/
+lemma conjugate_mem_cliffordGroup {u : Clˣ} (hu : u ∈ CliffordGroup) :
+    conjugate_unit u ∈ CliffordGroup := by
+  have h : conjugate_unit u = reverse_unit (involute_unit u) := by
+    -- simp only [reverse_unit, involute_unit, conjugate_unit]
+    rfl
+  rw [conjugate_unit_comp_def]
+  exact reverse_mem_cliffordGroup (involute_mem_cliffordGroup hu)
 
-theorem CliffordGroup.normSq_mul (x y : Clˣ) (hx : x ∈ CliffordGroup) (hy : y ∈ CliffordGroup) :
-    CliffordGroup.normSq (x * y) (CliffordGroup.mul_mem hx hy) =
-    CliffordGroup.normSq x hx * CliffordGroup.normSq y hy :=
-  CliffordGroup.normSq_unique (x * y) _ _
-    (CliffordGroup.normSq_spec (x * y) (CliffordGroup.mul_mem hx hy))
-    (by
-      simp only [Units.val_mul, conjugate.map_mul, mul_assoc]
-      rw [← mul_assoc (↑y : Cl)]
-      rw [CliffordGroup.normSq_spec y hy, smul_one_mul, mul_smul_comm]
-      rw [CliffordGroup.normSq_spec x hx, smul_smul, mul_comm]
-    )
-
-end Field_R
+def CliffordGroup.conjugateFun (u : @CliffordGroup R _ M _ _ Q) : @CliffordGroup R _ M _ _ Q :=
+  ⟨conjugate_unit u.1, conjugate_mem_cliffordGroup u.2⟩
 
 end CliffordAlgebra

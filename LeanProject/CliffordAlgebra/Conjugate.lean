@@ -11,7 +11,7 @@ namespace CliffordAlgebra
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M]
   [Module R M] {Q : QuadraticForm R M}
 
-variable (v w : M) (a b : CliffordAlgebra Q) (unit : (CliffordAlgebra Q)ˣ)
+variable (v w : M) (x a b : CliffordAlgebra Q) (unit : (CliffordAlgebra Q)ˣ)
 
 local notation "Cl" => CliffordAlgebra Q
 local notation "ι" => CliffordAlgebra.ι Q
@@ -31,8 +31,12 @@ Statements:
 -/
 def conjugate : Cl →ₗ[R] Cl := reverse.comp involute.toLinearMap
 
-theorem conjugate_apply (x : Cl) : conjugate x = reverse (involute x) := by
+theorem conjugate_apply : conjugate x = reverse (involute x) := by
   simp only [conjugate, LinearMap.comp_apply, AlgHom.coe_toLinearMap]
+
+example : conjugate x = involute (reverse x) := by
+  rw [conjugate_apply]
+  exact reverse_involute x
 
 @[simp]
 theorem conjugate_ι :
@@ -50,34 +54,57 @@ protected theorem conjugate.map_mul : conjugate (a * b) = conjugate b * conjugat
   repeat rw [conjugate_apply]
   rw [map_mul, reverse.map_mul]
 
-theorem conjugate_conjugate (x : Cl) : conjugate (conjugate x) = x := by
+@[simp]
+theorem conjugate_conjugate : conjugate (conjugate x) = x := by
   simp only [conjugate_apply]
   rw [reverse_involute, reverse_reverse, involute_involute]
 
+/-
+`reverse` and `conjugate` are algebra anti-homomorphisms, which is defined as
+an homomorphism to the opposite algebra
+
+-/
+def reverse_homOp : Cl →* Clᵐᵒᵖ where
+  toFun x := MulOpposite.op (reverse x)
+  map_one' := by simp only [reverse.map_one, MulOpposite.op_one]
+  map_mul' x y := by simp only [reverse.map_mul, MulOpposite.op_mul]
+
+def conjugate_homOp : Cl →* Clᵐᵒᵖ where
+  toFun x := MulOpposite.op (conjugate x)
+  map_one' := by simp only [conjugate.map_one, MulOpposite.op_one]
+  map_mul' x y := by simp only [conjugate.map_mul, MulOpposite.op_mul]
+
 /-!
 # Note 3.2.2.
+
 For vectors, reverse does nothing and involute is the same as conjugate
 
 -/
 example : reverse (ι v) = ι v := reverse_ι v
+
 example : involute (ι v) = - ι v := involute_ι v
-lemma n322_i : conjugate (ι v) = involute (ι v) := (conjugate_ι v).trans (involute_ι v).symm
-lemma n322_ii : conjugate (ι v) = - ι v := by rw [n322_i]; exact involute_ι v
+
+lemma n322_i : conjugate (ι v) = involute (ι v) :=
+  (conjugate_ι v).trans (involute_ι v).symm
+
+lemma n322_ii : conjugate (ι v) = - ι v := by
+  rw [n322_i];
+  exact involute_ι v
 
 /-!
 # Statement 3.2.3
 
 -/
-theorem s323_i_a : involute (a + b) = involute a + involute b := map_add involute a b
-theorem s323_i_b : involute (a * b) = involute a * involute b := map_mul involute a b
-theorem s323_ii_a : reverse (a + b) = reverse a + reverse b := map_add reverse a b
+theorem s323_i_a : involute (a + b) = involute a + involute b := involute.map_add a b
+theorem s323_i_b : involute (a * b) = involute a * involute b := involute.map_mul a b
+theorem s323_ii_a : reverse (a + b) = reverse a + reverse b := reverse.map_add a b
 theorem s323_ii_b : reverse (a * b) = reverse b * reverse a := reverse.map_mul a b
 theorem s323_iii_a : conjugate (a + b) = conjugate a + conjugate b := map_add conjugate a b
 theorem s323_iii_b : conjugate (a * b) = conjugate b * conjugate a := conjugate.map_mul a b
 
 /-!
 # Statement 3.2.4
-`involute`, `reverse`, `conjugate` all commutate with units
+`involute`, `reverse`, `conjugate` all commutate with inversion on units
 
 * involute preserves units (maps units to units)
 * (i) `involute (unit⁻¹)` is the inverse of `involute unit`
@@ -106,36 +133,8 @@ theorem s324_iii :
   · rw [← conjugate.map_mul, Units.inv_mul, conjugate.map_one]
   · rw [← conjugate.map_mul, Units.mul_inv, conjugate.map_one]
 
-/-
-Involute preserves units (maps units to units)
--/
-theorem isUnit_involute {a : Cl} : IsUnit (involute a) ↔ IsUnit a := by
-  constructor
-  · exact fun h_unit ↦ involute_involute a ▸ IsUnit.map involute.toMonoidHom h_unit
-  · exact fun h_unit ↦ IsUnit.map involute.toMonoidHom h_unit
-
-/-
-Conjugate preserves units (maps units to units)
--/
-def conjugate_unit (u : Clˣ) : Clˣ :=
-  ⟨conjugate ↑u, conjugate ↑u⁻¹, (s324_iii u).1, (s324_iii u).2⟩
-
-@[simp]
-lemma conjugate_unit_inv_coe (u : Clˣ) : (↑(conjugate_unit u)⁻¹ : Cl) = conjugate (↑(u⁻¹) : Cl) :=
-  by simp only [conjugate_unit, Units.inv_mk]
-
-theorem isUnit_conjugate {a : Cl} : IsUnit (conjugate a) ↔ IsUnit a := by
-  constructor
-  · intro hconj
-    rw [← conjugate_conjugate a]
-    obtain ⟨u, hu⟩ := hconj
-    rw [← hu]
-    exact ⟨conjugate_unit u, rfl⟩
-  · intro ha
-    obtain ⟨u, rfl⟩ := ha
-    exact ⟨conjugate_unit u, rfl⟩
-
-/-! # Statement 3.2.5
+/-!
+# Statement 3.2.5
 * (i) `v * conjugate v = -Q(v)` (which is ‖x‖² in Euclidean case)
 * (ii) `v * conjugate w + w * conjugate v = - (Q(v+w) - Q(v) - Q(w))`
 
