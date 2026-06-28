@@ -123,6 +123,26 @@ theorem CliffordGroup.normSq_mul (u v : ClGroup) : normSq (u * v) = normSq u * n
   rw [normSq_spec v, smul_one_mul, mul_smul_comm]
   rw [normSq_spec u, smul_smul, mul_comm]
 
+/-
+# Statement 3.2.11 (i)
+* Maybe (?) true for general `[CommRing R]`
+* Proven here for `[Field R]` with the use of `normSq_exists`
+
+-/
+theorem CliffordGroup.s3211_i1 (a : ClGroup) : a * CliffordGroup.conjugateFun a =
+    (CliffordGroup.involuteHom a) * (CliffordGroup.reverseFun a) := by
+  apply Subtype.ext
+  apply Units.ext
+  simp only [conjugateFun, conjugate_unit, Subgroup.coe_mul, Units.val_mul, involuteHom,
+    MonoidHom.coe_mk, OneHom.coe_mk, reverseFun, MulMemClass.mk_mul_mk, coe_involute_unit,
+    coe_reverse_unit]
+  obtain ⟨r, hr⟩ := CliffordGroup.normSq_exists a
+  have := congr_arg involute hr
+  simp only [map_mul, map_smul, map_one] at this
+  rw [conjugate_apply, ← reverse_involute, involute_involute] at this
+  rw [this]
+  exact hr
+
 end Field_R
 
 end CliffordAlgebra

@@ -145,6 +145,10 @@ theorem s325_i :
     ι v * conjugate (ι v) = algebraMap R Cl (-Q v) := by
   rw [conjugate_ι, mul_neg, ι_sq_scalar, map_neg]
 
+theorem s325_i' :
+    conjugate (ι v) * (ι v) = algebraMap R Cl (-Q v) := by
+  rw [conjugate_ι, neg_mul, ι_sq_scalar, map_neg]
+
 theorem s325_ii (w : M) : ι v * conjugate (ι w) + ι w * conjugate (ι v) =
     algebraMap R Cl (-Q.polarBilin v w) := by
   have helper1 := @s325_i R _ M _ _ Q (v + w)

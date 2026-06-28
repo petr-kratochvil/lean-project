@@ -93,6 +93,10 @@ end norm
 @[simp]
 lemma CliffordGroup.norm_def (x : ClGroup) : ‖x‖ = Real.sqrt (CliffordGroup.normSq x) := rfl
 
+/-
+# Statement 3.2.11 (ii)
+
+-/
 theorem CliffordGroup.norm_mul (a b : ClGroup) : ‖a * b‖ = ‖a‖ * ‖b‖ := by
   simp only [norm_def]
   rw [CliffordGroup.normSq_mul]
