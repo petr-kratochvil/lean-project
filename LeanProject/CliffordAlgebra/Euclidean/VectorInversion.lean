@@ -68,7 +68,9 @@ noncomputable def toClGroup_vector (hv : v ≠ 0) : @CliffordGroup ℝ _ V _ _ Q
   ⟨toUnit_vector v hv, vector_unit_mem_cliffordGroup v hv⟩
 
 /-
-# Euclidean norm = Clifford group norm on vectors
+# Note 3.2.7
+Euclidean norm = Clifford group norm on vectors
+
 -/
 theorem vector_group_norm (hv : v ≠ 0) : ‖toClGroup_vector v hv‖ = ‖v‖ := by
   simp only [CliffordGroup.norm_def]
