@@ -8,7 +8,7 @@ namespace CliffordAlgebra.Euclidean
 # Notation, variables
 
 -/
-variable (n : ℕ)
+variable {n : ℕ}
 
 local notation "V" => EuclideanSpace ℝ (Fin n)
 local notation "Q" => Q_euclid_neg n
@@ -41,28 +41,21 @@ theorem vector_inverse_left (hv : v ≠ 0) : ((-‖v‖ ^ 2)⁻¹ • ι v) * (�
   rw [Q_euclid_neg_identity] at hv₂ ⊢
   rw [inv_mul_cancel₀ hv₂, one_smul]
 
-theorem isUnit_vector (hv : v ≠ 0) : IsUnit (ι v) := by
-  have hv2 : - ‖v‖ ^ 2 ≠ 0 := by
-    rw [← Q_euclid_neg_identity]
-    exact Q_euclid_neg_ne_zero _ _ hv
-  -- external refine: IsUnit (existential quantifier)
-  -- internal refine: Units (val, inv, val_inv, inv_val)
-  refine ⟨⟨ι v, (- ‖v‖ ^ 2)⁻¹ • ι v, ?_, ?_⟩, rfl⟩
-  · rw [vector_inverse_right]
-    exact hv
-  · rw [vector_inverse_left]
-    exact hv
+noncomputable def toUnit_vector (hv : v ≠ 0) : Clˣ :=
+  ⟨ι v, (- ‖v‖ ^ 2)⁻¹ • ι v, vector_inverse_right v hv, vector_inverse_left v hv⟩
+
+theorem isUnit_vector (hv : v ≠ 0) : IsUnit (ι v) := by exact ⟨toUnit_vector v hv, rfl⟩
+
+noncomputable def vector_inv (hv : v ≠ 0) : Cl := ↑(toUnit_vector v hv)⁻¹
 
 /-!
 # Vectors belong to the Clifford group
 Non-zero vectors are invertible, so they belong to the Clifford group
-(a special case, they are part of the Clifford group generator set)
 
 -/
-theorem vector_unit_mem_cliffordGroup (hv : v ≠ 0) :
-  let v_unit := (isUnit_vector n v hv).unit; v_unit ∈ CliffordGroup := by
+theorem vector_unit_mem_cliffordGroup (hv : v ≠ 0) : (toUnit_vector v hv) ∈ CliffordGroup := by
   apply Subgroup.subset_closure
-  simp only [Set.mem_setOf_eq, IsUnit.unit_spec]
+  simp only [Set.mem_setOf_eq]
   use v
   constructor
   · trivial
@@ -70,5 +63,20 @@ theorem vector_unit_mem_cliffordGroup (hv : v ≠ 0) :
     simp only [isUnit_iff_ne_zero, ne_eq, neg_eq_zero, OfNat.ofNat_ne_zero, not_false_eq_true,
       pow_eq_zero_iff, norm_eq_zero]
     exact hv
+
+noncomputable def toClGroup_vector (hv : v ≠ 0) : @CliffordGroup ℝ _ V _ _ Q :=
+  ⟨toUnit_vector v hv, vector_unit_mem_cliffordGroup v hv⟩
+
+/-
+# Euclidean norm = Clifford group norm on vectors
+-/
+theorem vector_group_norm (hv : v ≠ 0) : ‖toClGroup_vector v hv‖ = ‖v‖ := by
+  simp only [CliffordGroup.norm_def]
+  have := CliffordGroup.normSq_spec (toClGroup_vector v hv)
+  have v_g_coe : (↑(toClGroup_vector v hv : Clˣ) : Cl) = ι v := rfl
+  rw [v_g_coe, s325_i_eu] at this
+  rw [← Algebra.algebraMap_eq_smul_one] at this
+  rw [← (algebraMap ℝ Cl).injective this]
+  simp only [norm_nonneg, Real.sqrt_sq]
 
 end CliffordAlgebra.Euclidean

@@ -7,7 +7,7 @@ import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 open CliffordAlgebra
 namespace CliffordAlgebra.Euclidean
 
-variable {n : ℕ} (v w : EuclideanSpace ℝ (Fin n)) (a b : CliffordAlgebra (Q_euclid_neg n))
+variable {n : ℕ}
 
 local notation "V" => EuclideanSpace ℝ (Fin n)
 local notation "Q" => Q_euclid_neg n
