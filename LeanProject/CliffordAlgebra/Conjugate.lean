@@ -77,7 +77,8 @@ def conjugate_homOp : Cl →* Clᵐᵒᵖ where
 /-!
 # Note 3.2.2.
 
-For vectors, reverse does nothing and involute is the same as conjugate
+* For vectors, reverse does nothing and involute is the same as conjugate.
+* The same is true for `[CommRing R]` members (we use `algebraMap` instead of `ι` here)
 
 -/
 example : reverse (ι v) = ι v := reverse_ι v
@@ -90,6 +91,12 @@ lemma n322_i : conjugate (ι v) = involute (ι v) :=
 lemma n322_ii : conjugate (ι v) = - ι v := by
   rw [n322_i];
   exact involute_ι v
+
+example (r : R) : involute (algebraMap R Cl r) = algebraMap R Cl r := by
+  rw [involute.commutes]
+
+example (r : R) : reverse (algebraMap R Cl r) = algebraMap R Cl r := by
+  rw [reverse.commutes]
 
 /-!
 # Statement 3.2.3
